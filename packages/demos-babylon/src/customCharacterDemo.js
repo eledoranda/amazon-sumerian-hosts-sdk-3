@@ -1,8 +1,8 @@
-import { HostObject } from '@amazon-sumerian-hosts/babylon';
-import { Scene } from '@babylonjs/core/scene';
-import { Vector3 } from '@babylonjs/core';
+import {HostObject} from '@amazon-sumerian-hosts/babylon';
+import {Scene} from '@babylonjs/core/scene';
+import {Vector3} from '@babylonjs/core';
+import {fromCognitoIdentityPool} from '@aws-sdk/credential-providers';
 import DemoUtils from './common/demo-utils';
-import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 
 let host;
 let scene;
@@ -13,7 +13,7 @@ async function createScene() {
   scene = new Scene();
   scene.useRightHandedSystem = true;
 
-  const { shadowGenerator } = DemoUtils.setupSceneEnvironment(scene);
+  const {shadowGenerator} = DemoUtils.setupSceneEnvironment(scene);
 
   // Adjust the camera's target.
   scene.activeCamera.setTarget(new Vector3(0, 0.5, 0));
@@ -29,13 +29,13 @@ async function createScene() {
   const region = cognitoIdentityPoolId.split(':')[0];
 
   const credentials = fromCognitoIdentityPool({
-    clientConfig: { region: region },
-    identityPoolId: cognitoIdentityPoolId// Replace with your Cognito Identity Pool ID
+    clientConfig: {region},
+    identityPoolId: cognitoIdentityPoolId, // Replace with your Cognito Identity Pool ID
   });
 
   // ===== Instantiate the Sumerian Host =====
 
-  const pollyConfig = { pollyVoice: 'Ivy', pollyEngine: 'neural' };
+  const pollyConfig = {pollyVoice: 'Ivy', pollyEngine: 'neural'};
 
   // Create a characterConfig object describing the custom character and its
   // assets.
@@ -55,7 +55,13 @@ async function createScene() {
     lookJoint: 'char:gaze',
   };
 
-  host = await HostObject.createHost(scene, characterConfig, pollyConfig, credentials, region);
+  host = await HostObject.createHost(
+    scene,
+    characterConfig,
+    pollyConfig,
+    credentials,
+    region
+  );
 
   // Tell the host to always look at the camera.
   host.PointOfInterestFeature.setTarget(scene.activeCamera);

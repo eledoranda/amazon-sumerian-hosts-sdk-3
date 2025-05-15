@@ -1,7 +1,7 @@
 {
-  "name": "@amazon-sumerian-hosts/babylon",
-  "version": "2.0.6",
-  "description": "",
+  "name": "amazon-sumerian-hosts-sdk-3-babylon",
+  "version": "3.0.0",
+  "description": "Babylon.js implementation for Amazon Sumerian Hosts SDK 3",
   "license": "MIT",
   "author": {
     "name": "Amazon Web Services",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aws-samples/amazon-sumerian-hosts.git"
+    "url": "https://github.com/eledoranda/amazon-sumerian-hosts-sdk-3.git"
   },
   "main": "./src/Babylon.js/index.js",
   "exports": {
@@ -21,7 +21,7 @@
   "scripts": {
   },
   "dependencies": {
-    "@amazon-sumerian-hosts/core": "^2.0.0",
+    "amazon-sumerian-hosts-sdk-3-core": "^3.0.0",
     "@aws-sdk/client-polly": "^3.427.0",
     "@aws-sdk/client-lex-runtime-v2": "^3.427.0",
     "@aws-sdk/polly-request-presigner": "^3.427.0"

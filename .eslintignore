@@ -1,0 +1,4 @@
+# Ignore webpack-generated bundle files
+vendors-*.js
+dist/
+node_modules/

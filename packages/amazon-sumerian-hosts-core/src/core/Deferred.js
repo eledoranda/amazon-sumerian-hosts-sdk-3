@@ -27,7 +27,7 @@ class Deferred extends Promise {
    * @param {Function=} onCancel - Optional function to execute if the user cancels
    * the promise. Canceling results in the promise having a status of 'resolved'.
    */
-  constructor(executable = () => { }, onResolve, onReject, onCancel) {
+  constructor(executable = () => {}, onResolve, onReject, onCancel) {
     if (typeof executable !== 'function') {
       throw new Error(
         `Cannot create new Deferred. Executable must be a function.`
@@ -63,8 +63,6 @@ class Deferred extends Promise {
     };
 
     super((resolve, reject) => {
-
-
       // Store the resolver
       res = value => {
         if (status.pending) {
@@ -85,7 +83,7 @@ class Deferred extends Promise {
           status.rejected = true;
           status.pending = false;
           if (typeof onReject === 'function') {
-            console.log(value)
+            console.log(value);
             value = onReject(value);
           }
 

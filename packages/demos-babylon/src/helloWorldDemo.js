@@ -1,7 +1,7 @@
-import { HostObject } from '@amazon-sumerian-hosts/babylon';
-import { Scene } from '@babylonjs/core/scene';
+import {HostObject} from '@amazon-sumerian-hosts/babylon';
+import {Scene} from '@babylonjs/core/scene';
+import {fromCognitoIdentityPool} from '@aws-sdk/credential-providers';
 import DemoUtils from './common/demo-utils';
-import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 
 let host;
 let scene;
@@ -11,7 +11,7 @@ async function createScene() {
   // right-hand or left-hand coordinate system for babylon scene
   scene = new Scene();
 
-  const { shadowGenerator } = DemoUtils.setupSceneEnvironment(scene);
+  const {shadowGenerator} = DemoUtils.setupSceneEnvironment(scene);
   initUi();
 
   // ===== Configure the AWS SDK v3 =====
@@ -23,10 +23,9 @@ async function createScene() {
   const region = cognitoIdentityPoolId.split(':')[0];
 
   const credentials = fromCognitoIdentityPool({
-    clientConfig: { region: region },
-    identityPoolId: cognitoIdentityPoolId// Replace with your Cognito Identity Pool ID
+    clientConfig: {region},
+    identityPoolId: cognitoIdentityPoolId, // Replace with your Cognito Identity Pool ID
   });
-
 
   // ===== Instantiate the Sumerian Host =====
 
@@ -34,15 +33,19 @@ async function createScene() {
   // the other pre-built host characters. Available character IDs are:
   // "Cristine", "Fiona", "Grace", "Maya", "Jay", "Luke", "Preston", "Wes"
   const characterId = 'Cristine';
-  const pollyConfig = { pollyVoice: 'Joanna', pollyEngine: 'neural' };
-
-
+  const pollyConfig = {pollyVoice: 'Joanna', pollyEngine: 'neural'};
 
   const characterConfig = HostObject.getCharacterConfig(
     './character-assets',
     characterId
   );
-  host = await HostObject.createHost(scene, characterConfig, pollyConfig, credentials, region);
+  host = await HostObject.createHost(
+    scene,
+    characterConfig,
+    pollyConfig,
+    credentials,
+    region
+  );
 
   // Tell the host to always look at the camera.
   host.PointOfInterestFeature.setTarget(scene.activeCamera);

@@ -1,7 +1,7 @@
-import { HostObject, aws as AwsFeatures } from '@amazon-sumerian-hosts/babylon';
-import { Scene } from '@babylonjs/core/scene';
+import {HostObject, aws as AwsFeatures} from '@amazon-sumerian-hosts/babylon';
+import {Scene} from '@babylonjs/core/scene';
+import {fromCognitoIdentityPool} from '@aws-sdk/credential-providers';
 import DemoUtils from './common/demo-utils';
-import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 
 let host;
 let scene;
@@ -12,7 +12,7 @@ async function createScene() {
   scene = new Scene();
   scene.useRightHandedSystem = true;
 
-  const { shadowGenerator } = DemoUtils.setupSceneEnvironment(scene);
+  const {shadowGenerator} = DemoUtils.setupSceneEnvironment(scene);
 
   // ===== Configure the AWS SDK =====
 
@@ -23,8 +23,8 @@ async function createScene() {
   const region = cognitoIdentityPoolId.split(':')[0];
 
   const credentials = fromCognitoIdentityPool({
-    clientConfig: { region: region },
-    identityPoolId: cognitoIdentityPoolId// Replace with your Cognito Identity Pool ID
+    clientConfig: {region},
+    identityPoolId: cognitoIdentityPoolId, // Replace with your Cognito Identity Pool ID
   });
 
   // ===== Instantiate the Sumerian Host =====
@@ -33,12 +33,18 @@ async function createScene() {
   // the other pre-built host characters. Available character IDs are:
   // "Cristine", "Fiona", "Grace", "Maya", "Jay", "Luke", "Preston", "Wes"
   const characterId = 'Luke';
-  const pollyConfig = { pollyVoice: 'Matthew', pollyEngine: 'neural' };
+  const pollyConfig = {pollyVoice: 'Matthew', pollyEngine: 'neural'};
   const characterConfig = HostObject.getCharacterConfig(
     './character-assets',
     characterId
   );
-  host = await HostObject.createHost(scene, characterConfig, pollyConfig, credentials, region);
+  host = await HostObject.createHost(
+    scene,
+    characterConfig,
+    pollyConfig,
+    credentials,
+    region
+  );
 
   // Tell the host to always look at the camera.
   host.PointOfInterestFeature.setTarget(scene.activeCamera);
@@ -96,7 +102,7 @@ function initConversationManagement() {
   talkButton.onmouseup = () => lex.endVoiceRecording();
 
   // Use events dispatched by the LexFeature to present helpful user messages.
-  const { EVENTS } = AwsFeatures.LexFeature;
+  const {EVENTS} = AwsFeatures.LexFeature;
   lex.listenTo(EVENTS.lexResponseReady, response =>
     handleLexResponse(response)
   );

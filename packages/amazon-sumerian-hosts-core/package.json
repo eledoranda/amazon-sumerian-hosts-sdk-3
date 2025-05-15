@@ -1,7 +1,7 @@
 {
-  "name": "@amazon-sumerian-hosts/core",
-  "version": "2.0.6",
-  "description": "",
+  "name": "amazon-sumerian-hosts-sdk-3-core",
+  "version": "3.0.0",
+  "description": "Core package for Amazon Sumerian Hosts SDK 3",
   "license": "MIT",
   "author": {
     "name": "Amazon Web Services",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aws-samples/amazon-sumerian-hosts.git"
+    "url": "https://github.com/eledoranda/amazon-sumerian-hosts-sdk-3.git"
   },
   "main": "./src/core/index.js",
   "exports": {

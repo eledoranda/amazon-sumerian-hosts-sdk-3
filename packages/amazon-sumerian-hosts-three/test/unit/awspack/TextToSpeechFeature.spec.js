@@ -16,8 +16,9 @@ describeEnvironment('TextToSpeechFeature', () => {
     // mock AWS.Polly
     const mockPolly = jasmine.createSpyObj('Polly', ['describeVoices', 'send']);
     mockPolly.config = {customUserAgent: 'abc'};
-    mockPolly.send.and.returnValue(Promise.resolve({
-      Voices: [
+    mockPolly.send.and.returnValue(
+      Promise.resolve({
+        Voices: [
           {
             Gender: 'Female',
             Id: 'Emma',
@@ -43,8 +44,8 @@ describeEnvironment('TextToSpeechFeature', () => {
             SupportedEngines: ['standard'],
           },
         ],
-      }),
-    });
+      })
+    );
 
     // mock AWS.Polly.Presigner
     const mockPresigner = jasmine.createSpyObj('Presigner', [

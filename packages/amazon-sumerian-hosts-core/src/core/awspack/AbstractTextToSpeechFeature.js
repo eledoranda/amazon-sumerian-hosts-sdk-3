@@ -1,6 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import { compareVersions } from 'compare-versions';
+import {compareVersions} from 'compare-versions';
+import {
+  DescribeVoicesCommand,
+  SynthesizeSpeechCommand,
+} from '@aws-sdk/client-polly';
 import AbstractHostFeature from '../AbstractHostFeature';
 import AnimationUtils from '../animpack/AnimationUtils';
 import MathUtils from '../MathUtils';
@@ -228,7 +232,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
     if (polly.middlewareStack) {
       // Add custom user agent for SDK v3
       polly.middlewareStack.add(
-        (next) => async (args) => {
+        next => async args => {
           const userAgent = Utils.addCoreUserAgentComponent(
             args.request?.headers?.['user-agent'] || ''
           );
@@ -241,7 +245,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
           };
           return next(args);
         },
-        { step: 'build' }
+        {step: 'build'}
       );
     }
 
@@ -269,39 +273,34 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
     // Re-populate according to version
     const minNeuralSdk = this.POLLY_MIN_NEURAL_VERSION;
 
-    // Import DescribeVoicesCommand from AWS SDK v3
-    const { DescribeVoicesCommand } = require('@aws-sdk/client-polly');
-
     // Create command for SDK v3
     const command = new DescribeVoicesCommand({});
 
-    return this.SERVICES.polly
-      .send(command)
-      .then(response => {
-        const allCodes = {};
+    return this.SERVICES.polly.send(command).then(response => {
+      const allCodes = {};
 
-        response.Voices.forEach(voice => {
-          if (
-            voice.SupportedEngines.includes('standard') ||
-            compareVersions(version, minNeuralSdk) >= 0
-          ) {
-            availableVoices.push(voice);
-          }
+      response.Voices.forEach(voice => {
+        if (
+          voice.SupportedEngines.includes('standard') ||
+          compareVersions(version, minNeuralSdk) >= 0
+        ) {
+          availableVoices.push(voice);
+        }
 
-          availableVoices.forEach(voice => {
-            availableLanguages[voice.LanguageName] = voice.LanguageCode;
-            allCodes[voice.LanguageCode] = voice.LanguageName;
-          });
+        availableVoices.forEach(voice => {
+          availableLanguages[voice.LanguageName] = voice.LanguageCode;
+          allCodes[voice.LanguageCode] = voice.LanguageName;
         });
-
-        Object.entries(availableLanguages).forEach(([name, code]) => {
-          availableLanguageCodes[code] = name;
-        });
-
-        // Notify that we're ready to generate speeches
-        this._isReady = true;
-        this.emit(this.EVENTS.ready);
       });
+
+      Object.entries(availableLanguages).forEach(([name, code]) => {
+        availableLanguageCodes[code] = name;
+      });
+
+      // Notify that we're ready to generate speeches
+      this._isReady = true;
+      this.emit(this.EVENTS.ready);
+    });
   }
 
   /**
@@ -677,10 +676,9 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
         // Use the presigner function (getSynthesizeSpeechUrl) from SDK v3
         const url = await this.constructor.SERVICES.presigner({
           client: this.constructor.SERVICES.polly,
-          params: sdkParams
-        }
-        );
-        resolve({ url });
+          params: sdkParams,
+        });
+        resolve({url});
       } catch (error) {
         reject(error);
       }
@@ -697,9 +695,6 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
    * @returns {Deferred} Resolves with an array of speechmark objects
    */
   _synthesizeSpeechmarks(params) {
-    // Import SynthesizeSpeechCommand from AWS SDK v3
-    const { SynthesizeSpeechCommand } = require('@aws-sdk/client-polly');
-
     // Create command with SDK v3 parameters
     const command = new SynthesizeSpeechCommand({
       Engine: params.Engine,
@@ -712,97 +707,95 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
       SpeechMarkTypes: speechmarkTypes,
     });
 
-    return this.constructor.SERVICES.polly
-      .send(command)
-      .then(result => {
-        // Convert AudioStream to string
-        let dataStr = '';
-        if (result.AudioStream instanceof Uint8Array) {
-          const decoder = new TextDecoder('utf-8');
-          dataStr = decoder.decode(result.AudioStream);
-        } else if (typeof result.AudioStream === 'string') {
-          dataStr = result.AudioStream;
-        } else if (result.AudioStream && result.AudioStream.toString) {
-          dataStr = result.AudioStream.toString('utf-8');
-        } else {
-          throw new Error('Unexpected AudioStream format');
-        }
+    return this.constructor.SERVICES.polly.send(command).then(result => {
+      // Convert AudioStream to string
+      let dataStr = '';
+      if (result.AudioStream instanceof Uint8Array) {
+        const decoder = new TextDecoder('utf-8');
+        dataStr = decoder.decode(result.AudioStream);
+      } else if (typeof result.AudioStream === 'string') {
+        dataStr = result.AudioStream;
+      } else if (result.AudioStream && result.AudioStream.toString) {
+        dataStr = result.AudioStream.toString('utf-8');
+      } else {
+        throw new Error('Unexpected AudioStream format');
+      }
 
-        const markTypes = {
-          sentence: [],
-          word: [],
-          viseme: [],
-          ssml: [],
-        };
-        const endMarkTypes = {
-          sentence: null,
-          word: null,
-          viseme: null,
-          ssml: null,
-        };
+      const markTypes = {
+        sentence: [],
+        word: [],
+        viseme: [],
+        ssml: [],
+      };
+      const endMarkTypes = {
+        sentence: null,
+        word: null,
+        viseme: null,
+        ssml: null,
+      };
 
-        // Split by enclosing {} to create speechmark objects
-        const speechMarks = [...dataStr.matchAll(/\{.*?\}(?=\n|$)/gm)].map(
-          match => {
-            const mark = JSON.parse(match[0]);
+      // Split by enclosing {} to create speechmark objects
+      const speechMarks = [...dataStr.matchAll(/\{.*?\}(?=\n|$)/gm)].map(
+        match => {
+          const mark = JSON.parse(match[0]);
 
-            // Set the duration of the last speechmark stored matching this one's type
-            const numMarks = markTypes[mark.type].length;
-            if (numMarks > 0) {
-              const lastMark = markTypes[mark.type][numMarks - 1];
-              lastMark.duration = mark.time - lastMark.time;
-            }
-
-            markTypes[mark.type].push(mark);
-            endMarkTypes[mark.type] = mark;
-            return mark;
+          // Set the duration of the last speechmark stored matching this one's type
+          const numMarks = markTypes[mark.type].length;
+          if (numMarks > 0) {
+            const lastMark = markTypes[mark.type][numMarks - 1];
+            lastMark.duration = mark.time - lastMark.time;
           }
+
+          markTypes[mark.type].push(mark);
+          endMarkTypes[mark.type] = mark;
+          return mark;
+        }
+      );
+
+      // Find the time of the latest speechmark
+      const endTimes = [];
+      if (endMarkTypes.sentence) {
+        endTimes.push(endMarkTypes.sentence.time);
+      }
+      if (endMarkTypes.word) {
+        endTimes.push(endMarkTypes.word.time);
+      }
+      if (endMarkTypes.viseme) {
+        endTimes.push(endMarkTypes.viseme.time);
+      }
+      if (endMarkTypes.ssml) {
+        endTimes.push(endMarkTypes.ssml.time);
+      }
+      const endTime = Math.max(...endTimes);
+
+      // Calculate duration for the ending speechMarks of each type
+      if (endMarkTypes.sentence) {
+        endMarkTypes.sentence.duration = Math.max(
+          this._minEndMarkDuration,
+          endTime - endMarkTypes.sentence.time
         );
+      }
+      if (endMarkTypes.word) {
+        endMarkTypes.word.duration = Math.max(
+          this._minEndMarkDuration,
+          endTime - endMarkTypes.word.time
+        );
+      }
+      if (endMarkTypes.viseme) {
+        endMarkTypes.viseme.duration = Math.max(
+          this._minEndMarkDuration,
+          endTime - endMarkTypes.viseme.time
+        );
+      }
+      if (endMarkTypes.ssml) {
+        endMarkTypes.ssml.duration = Math.max(
+          this._minEndMarkDuration,
+          endTime - endMarkTypes.ssml.time
+        );
+      }
 
-        // Find the time of the latest speechmark
-        const endTimes = [];
-        if (endMarkTypes.sentence) {
-          endTimes.push(endMarkTypes.sentence.time);
-        }
-        if (endMarkTypes.word) {
-          endTimes.push(endMarkTypes.word.time);
-        }
-        if (endMarkTypes.viseme) {
-          endTimes.push(endMarkTypes.viseme.time);
-        }
-        if (endMarkTypes.ssml) {
-          endTimes.push(endMarkTypes.ssml.time);
-        }
-        const endTime = Math.max(...endTimes);
-
-        // Calculate duration for the ending speechMarks of each type
-        if (endMarkTypes.sentence) {
-          endMarkTypes.sentence.duration = Math.max(
-            this._minEndMarkDuration,
-            endTime - endMarkTypes.sentence.time
-          );
-        }
-        if (endMarkTypes.word) {
-          endMarkTypes.word.duration = Math.max(
-            this._minEndMarkDuration,
-            endTime - endMarkTypes.word.time
-          );
-        }
-        if (endMarkTypes.viseme) {
-          endMarkTypes.viseme.duration = Math.max(
-            this._minEndMarkDuration,
-            endTime - endMarkTypes.viseme.time
-          );
-        }
-        if (endMarkTypes.ssml) {
-          endMarkTypes.ssml.duration = Math.max(
-            this._minEndMarkDuration,
-            endTime - endMarkTypes.ssml.time
-          );
-        }
-
-        return speechMarks;
-      });
+      return speechMarks;
+    });
   }
 
   /**
@@ -976,7 +969,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
       this,
       'volume',
       volume,
-      { seconds, easingFn }
+      {seconds, easingFn}
     );
 
     return this._promises.volume;

@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import {compareVersions} from 'compare-versions';
+import { compareVersions } from 'compare-versions';
 import AbstractHostFeature from '../AbstractHostFeature';
 import AnimationUtils from '../animpack/AnimationUtils';
 import MathUtils from '../MathUtils';
@@ -208,7 +208,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
    * Store Polly, Presigner and AWS SDK Version for use across all instances.
    *
    * @param {external:Polly} polly - Polly instance to use to generate speechmarks.
-   * @param {external:Presigner} presigner - Presigner instance to use to generate
+   * @param {external:Presigner} presigner - Presigner function to use to generate
    * audio URLs.
    * @param {string} version - Version of the AWS SDK to use to validate voice options.
    */
@@ -224,25 +224,24 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
       );
     }
 
-    // Add sumerian hosts user-agent
-    if (polly.config) {
-      polly.config.customUserAgent = Utils.addCoreUserAgentComponent(
-        polly.config.customUserAgent
-      );
-
-      polly.config.customUserAgent = Utils.addStringOnlyOnce(
-        polly.config.customUserAgent,
-        this.prototype.getEngineUserAgentString()
-      );
-    }
-    if (presigner.service && presigner.service.config) {
-      presigner.service.config.customUserAgent = Utils.addCoreUserAgentComponent(
-        presigner.service.config.customUserAgent
-      );
-
-      presigner.service.config.customUserAgent = Utils.addStringOnlyOnce(
-        presigner.service.config.customUserAgent,
-        this.prototype.getEngineUserAgentString()
+    // Add sumerian hosts user-agent for SDK v3
+    if (polly.middlewareStack) {
+      // Add custom user agent for SDK v3
+      polly.middlewareStack.add(
+        (next) => async (args) => {
+          const userAgent = Utils.addCoreUserAgentComponent(
+            args.request?.headers?.['user-agent'] || ''
+          );
+          args.request.headers = {
+            ...args.request.headers,
+            'user-agent': Utils.addStringOnlyOnce(
+              userAgent,
+              this.prototype.getEngineUserAgentString()
+            ),
+          };
+          return next(args);
+        },
+        { step: 'build' }
       );
     }
 
@@ -270,9 +269,14 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
     // Re-populate according to version
     const minNeuralSdk = this.POLLY_MIN_NEURAL_VERSION;
 
+    // Import DescribeVoicesCommand from AWS SDK v3
+    const { DescribeVoicesCommand } = require('@aws-sdk/client-polly');
+
+    // Create command for SDK v3
+    const command = new DescribeVoicesCommand({});
+
     return this.SERVICES.polly
-      .describeVoices()
-      .promise()
+      .send(command)
       .then(response => {
         const allCodes = {};
 
@@ -657,17 +661,29 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
    * @returns {Deferred} Resolves with an object containing the audio URL.
    */
   _synthesizeAudio(params) {
-    return new Deferred((resolve, reject) => {
-      this.constructor.SERVICES.presigner.getSynthesizeSpeechUrl(
-        params,
-        function(error, url) {
-          if (!error) {
-            resolve({url});
-          } else {
-            reject(error);
-          }
+    return new Deferred(async (resolve, reject) => {
+      try {
+        // Create SDK v3 parameters
+        const sdkParams = {
+          Engine: params.Engine,
+          OutputFormat: params.OutputFormat,
+          SampleRate: params.SampleRate,
+          Text: params.Text,
+          TextType: params.TextType,
+          VoiceId: params.VoiceId,
+          LanguageCode: params.LanguageCode,
+        };
+
+        // Use the presigner function (getSynthesizeSpeechUrl) from SDK v3
+        const url = await this.constructor.SERVICES.presigner({
+          client: this.constructor.SERVICES.polly,
+          params: sdkParams
         }
-      );
+        );
+        resolve({ url });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -681,14 +697,36 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
    * @returns {Deferred} Resolves with an array of speechmark objects
    */
   _synthesizeSpeechmarks(params) {
+    // Import SynthesizeSpeechCommand from AWS SDK v3
+    const { SynthesizeSpeechCommand } = require('@aws-sdk/client-polly');
+
+    // Create command with SDK v3 parameters
+    const command = new SynthesizeSpeechCommand({
+      Engine: params.Engine,
+      OutputFormat: 'json',
+      SampleRate: params.SampleRate,
+      Text: params.Text,
+      TextType: params.TextType,
+      VoiceId: params.VoiceId,
+      LanguageCode: params.LanguageCode,
+      SpeechMarkTypes: speechmarkTypes,
+    });
+
     return this.constructor.SERVICES.polly
-      .synthesizeSpeech(params)
-      .promise()
+      .send(command)
       .then(result => {
-        // Convert charcodes to string
-        const jsonString = JSON.stringify(result.AudioStream);
-        const json = JSON.parse(jsonString);
-        const dataStr = json.data.map(c => String.fromCharCode(c)).join('');
+        // Convert AudioStream to string
+        let dataStr = '';
+        if (result.AudioStream instanceof Uint8Array) {
+          const decoder = new TextDecoder('utf-8');
+          dataStr = decoder.decode(result.AudioStream);
+        } else if (typeof result.AudioStream === 'string') {
+          dataStr = result.AudioStream;
+        } else if (result.AudioStream && result.AudioStream.toString) {
+          dataStr = result.AudioStream.toString('utf-8');
+        } else {
+          throw new Error('Unexpected AudioStream format');
+        }
 
         const markTypes = {
           sentence: [],
@@ -938,7 +976,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
       this,
       'volume',
       volume,
-      {seconds, easingFn}
+      { seconds, easingFn }
     );
 
     return this._promises.volume;

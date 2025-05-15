@@ -19,5 +19,8 @@
     "@amazon-sumerian-hosts/babylon": "^2.0.0",
     "@babylonjs/core": "^4.2.1",
     "copy-webpack-plugin": "^10.2.4"
+  },
+  "dependencies": {
+    "@aws-sdk/credential-providers": "^3.810.0"
   }
 }

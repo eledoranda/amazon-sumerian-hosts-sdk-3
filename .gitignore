@@ -14,3 +14,4 @@ docs/
 demo-credentials.js
 **/dist/
 .hot-reload/
+vendors-node_modules_aws-*

@@ -1,6 +1,7 @@
-import {HostObject} from '@amazon-sumerian-hosts/babylon';
-import {Scene} from '@babylonjs/core/scene';
+import { HostObject } from '@amazon-sumerian-hosts/babylon';
+import { Scene } from '@babylonjs/core/scene';
 import DemoUtils from './common/demo-utils';
+import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 
 let host;
 let scene;
@@ -10,20 +11,22 @@ async function createScene() {
   // right-hand or left-hand coordinate system for babylon scene
   scene = new Scene();
 
-  const {shadowGenerator} = DemoUtils.setupSceneEnvironment(scene);
+  const { shadowGenerator } = DemoUtils.setupSceneEnvironment(scene);
   initUi();
 
-  // ===== Configure the AWS SDK =====
-
+  // ===== Configure the AWS SDK v3 =====
   // This is served by webpack-dev-server and comes from demo-credentials.js in the repo root
   // If you copy this example, you will substitute in your own cognito Pool ID
+
   const config = await (await fetch('/devConfig.json')).json();
   const cognitoIdentityPoolId = config.cognitoIdentityPoolId;
+  const region = cognitoIdentityPoolId.split(':')[0];
 
-  AWS.config.region = cognitoIdentityPoolId.split(':')[0];
-  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: cognitoIdentityPoolId,
+  const credentials = fromCognitoIdentityPool({
+    clientConfig: { region: region },
+    identityPoolId: cognitoIdentityPoolId// Replace with your Cognito Identity Pool ID
   });
+
 
   // ===== Instantiate the Sumerian Host =====
 
@@ -31,12 +34,15 @@ async function createScene() {
   // the other pre-built host characters. Available character IDs are:
   // "Cristine", "Fiona", "Grace", "Maya", "Jay", "Luke", "Preston", "Wes"
   const characterId = 'Cristine';
-  const pollyConfig = {pollyVoice: 'Joanna', pollyEngine: 'neural'};
+  const pollyConfig = { pollyVoice: 'Joanna', pollyEngine: 'neural' };
+
+
+
   const characterConfig = HostObject.getCharacterConfig(
     './character-assets',
     characterId
   );
-  host = await HostObject.createHost(scene, characterConfig, pollyConfig);
+  host = await HostObject.createHost(scene, characterConfig, pollyConfig, credentials, region);
 
   // Tell the host to always look at the camera.
   host.PointOfInterestFeature.setTarget(scene.activeCamera);

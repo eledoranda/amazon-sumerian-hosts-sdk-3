@@ -14,11 +14,10 @@ describeEnvironment('TextToSpeechFeature', () => {
     mockHost = new Messenger();
 
     // mock AWS.Polly
-    const mockPolly = jasmine.createSpyObj('Polly', ['describeVoices']);
+    const mockPolly = jasmine.createSpyObj('Polly', ['describeVoices', 'send']);
     mockPolly.config = {customUserAgent: 'abc'};
-    mockPolly.describeVoices.and.returnValue({
-      promise: jasmine.createSpy().and.resolveTo({
-        Voices: [
+    mockPolly.send.and.returnValue(Promise.resolve({
+      Voices: [
           {
             Gender: 'Female',
             Id: 'Emma',

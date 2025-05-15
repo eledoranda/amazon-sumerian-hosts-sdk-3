@@ -5,14 +5,16 @@ import {
   LipsyncFeature,
   GestureFeature,
 } from '@amazon-sumerian-hosts/core';
-import {SceneLoader} from '@babylonjs/core/Loading/sceneLoader';
-import {PrecisionDate} from '@babylonjs/core/Misc/precisionDate';
-import {Observable} from '@babylonjs/core/Misc/observable';
-import {AnimationGroup} from '@babylonjs/core/Animations/animationGroup';
+import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
+import { PrecisionDate } from '@babylonjs/core/Misc/precisionDate';
+import { Observable } from '@babylonjs/core/Misc/observable';
+import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
 // eslint-disable-next-line no-unused-vars
-import {RawTexture} from '@babylonjs/core/Materials/Textures/rawTexture';
+import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture';
 import '@babylonjs/loaders';
-import AWS from 'aws-sdk';
+import { PollyClient } from "@aws-sdk/client-polly";
+
+import { getSynthesizeSpeechUrl } from "@aws-sdk/polly-request-presigner";
 import anim from './animpack';
 import aws from './awspack';
 import PointOfInterestFeature from './PointOfInterestFeature';
@@ -106,22 +108,23 @@ class HostObject extends CoreHostObject {
    *     credentials and configuration.
    * @param {AWS.Polly.presigner=} presigner The presigner used for Polly calls
    */
-  static async initTextToSpeech(polly, presigner) {
+  static async initTextToSpeech(polly, credentials, region
+  ) {
     // Ensure services get initialized only once per session.
     if (aws.TextToSpeechFeature.isReady) return;
 
     // Enable Polly service functionality if necessary.
     if (typeof polly === 'undefined') {
-      polly = new AWS.Polly();
+      polly = new PollyClient({ region: region, credentials: credentials })
     }
-    if (typeof presigner === 'undefined') {
-      presigner = new AWS.Polly.Presigner();
-    }
+    // if (typeof presigner === 'undefined') {
+    //   presigner = new AWS.Polly.Presigner();
+    // }
 
     await aws.TextToSpeechFeature.initializeService(
       polly,
-      presigner,
-      AWS.VERSION
+      getSynthesizeSpeechUrl,
+      '3.0.0'
     );
   }
 
@@ -193,7 +196,7 @@ class HostObject extends CoreHostObject {
    */
   static async loadAssets(
     scene,
-    {modelUrl, animUrls, gestureConfigUrl, pointOfInterestConfigUrl}
+    { modelUrl, animUrls, gestureConfigUrl, pointOfInterestConfigUrl }
   ) {
     const characterAsset = await this.loadCharacterMesh(scene, modelUrl);
     const characterMesh = characterAsset.meshes[0];
@@ -216,7 +219,7 @@ class HostObject extends CoreHostObject {
     // on the PointOfInterestFeature.
     const poiConfig = await this.loadJson(pointOfInterestConfigUrl);
 
-    return {characterMesh, animClips, bindPoseOffset, gestureConfig, poiConfig};
+    return { characterMesh, animClips, bindPoseOffset, gestureConfig, poiConfig };
   }
 
   /**
@@ -327,7 +330,7 @@ class HostObject extends CoreHostObject {
     container.dispose();
     scene.onAnimationFileImportedObservable.notifyObservers(scene);
 
-    return {clipGroupId, clips};
+    return { clipGroupId, clips };
   }
 
   /**
@@ -336,10 +339,10 @@ class HostObject extends CoreHostObject {
    * @param {Scene} scene
    */
   static assembleHost(assets, scene) {
-    const {characterMesh} = assets;
+    const { characterMesh } = assets;
 
     // Add the host to the render loop
-    const host = new HostObject({owner: assets.characterMesh});
+    const host = new HostObject({ owner: assets.characterMesh });
     scene.onBeforeAnimationsObservable.add(() => {
       host.update();
     });
@@ -364,7 +367,7 @@ class HostObject extends CoreHostObject {
       'Base',
       idleClip.name,
       anim.AnimationTypes.single,
-      {clip: idleClip}
+      { clip: idleClip }
     );
     host.AnimationFeature.playAnimation('Base', idleClip.name);
 
@@ -422,7 +425,7 @@ class HostObject extends CoreHostObject {
       'Talk',
       talkClip.name,
       anim.AnimationTypes.single,
-      {clip: talkClip}
+      { clip: talkClip }
     );
     host.AnimationFeature.playAnimation('Talk', talkClip.name);
 
@@ -433,7 +436,7 @@ class HostObject extends CoreHostObject {
     });
 
     gestureClips.forEach(clip => {
-      const {name} = clip;
+      const { name } = clip;
       const config = assets.gestureConfig[name];
       AnimationGroup.MakeAnimationAdditive(clip);
 
@@ -456,16 +459,16 @@ class HostObject extends CoreHostObject {
           name,
           anim.AnimationTypes.single,
 
-          {clip}
+          { clip }
         );
       }
     });
 
     // Emote animations
-    host.AnimationFeature.addLayer('Emote', {transitionTime: 0.5});
+    host.AnimationFeature.addLayer('Emote', { transitionTime: 0.5 });
 
     emoteClips.forEach(clip => {
-      const {name} = clip;
+      const { name } = clip;
       host.AnimationFeature.addAnimation(
         'Emote',
         name,
@@ -499,7 +502,7 @@ class HostObject extends CoreHostObject {
       'visemes',
       anim.AnimationTypes.freeBlend,
 
-      {blendStateOptions}
+      { blendStateOptions }
     );
     host.AnimationFeature.playAnimation('Viseme', 'visemes');
 
@@ -524,7 +527,7 @@ class HostObject extends CoreHostObject {
         config.animation,
         anim.AnimationTypes.blend2d,
 
-        {...config}
+        { ...config }
       );
 
       host.AnimationFeature.playAnimation(config.name, config.animation);
@@ -536,7 +539,7 @@ class HostObject extends CoreHostObject {
     });
 
     // Apply bindPoseOffset clip if it exists
-    const {bindPoseOffset} = assets;
+    const { bindPoseOffset } = assets;
     if (bindPoseOffset !== undefined) {
       host.AnimationFeature.addLayer('BindPoseOffset', {
         blendMode: anim.LayerBlendModes.Additive,
@@ -582,7 +585,7 @@ class HostObject extends CoreHostObject {
     // Set up Gestures
     host.addFeature(GestureFeature, false, {
       layers: {
-        Gesture: {minimumInterval: 3},
+        Gesture: { minimumInterval: 3 },
         Emote: {
           blendTime: 0.5,
           easingFn: anim.Easing.Quadratic.InOut,
@@ -643,9 +646,9 @@ class HostObject extends CoreHostObject {
     host.addFeature(
       PointOfInterestFeature,
       false,
-      {lookTracker: lookJoint, scene},
-      {layers: poiConfig},
-      {layers: [{name: 'Blink'}]}
+      { lookTracker: lookJoint, scene },
+      { layers: poiConfig },
+      { layers: [{ name: 'Blink' }] }
     );
   }
 
@@ -736,10 +739,11 @@ const host = await HOST.HostUtils.createHost(scene, characterConfig, pollyConfig
    *
    * @returns {HostObject} A functioning Sumerian Host
    */
-  static async createHost(scene, characterConfig, pollyConfig) {
+  static async createHost(scene, characterConfig, pollyConfig, credentials, region) {
     await this.initTextToSpeech(
       pollyConfig.pollyClient,
-      pollyConfig.pollyPresigner
+      credentials,
+      region
     );
     const assets = await this.loadAssets(scene, characterConfig);
     const host = this.assembleHost(assets, scene);

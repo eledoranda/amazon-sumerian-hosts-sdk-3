@@ -3,7 +3,7 @@
 import {
   AnimationFeature as CoreAnimationFeature,
   AnimationTypes,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 import SingleState from './state/SingleState';
 
 AnimationTypes.single = SingleState;

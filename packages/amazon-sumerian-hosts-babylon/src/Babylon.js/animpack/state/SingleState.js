@@ -3,7 +3,7 @@
 import {
   SingleState as CoreSingleState,
   MathUtils,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 import '@babylonjs/core/Animations/animatable';
 
 const babylonBlendModes = {

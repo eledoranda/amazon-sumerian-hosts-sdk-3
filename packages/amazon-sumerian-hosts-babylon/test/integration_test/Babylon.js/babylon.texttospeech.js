@@ -1,5 +1,5 @@
 import * as BABYLON from '@babylonjs/core/Legacy/legacy';
-import {HostObject, aws} from '@amazon-sumerian-hosts/babylon';
+import {HostObject, aws} from 'amazon-sumerian-hosts-sdk-3-babylon';
 
 async function main() {
   // This is served by webpack-dev-server and comes from demo-credentials.js in the repo root

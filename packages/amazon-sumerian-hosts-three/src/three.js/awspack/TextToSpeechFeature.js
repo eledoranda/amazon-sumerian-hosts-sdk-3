@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import {TextToSpeechFeature as CoreTextToSpeechFeature} from '@amazon-sumerian-hosts/core';
+import {TextToSpeechFeature as CoreTextToSpeechFeature} from 'amazon-sumerian-hosts-sdk-3-core';
 import Speech from './Speech';
 
 /**

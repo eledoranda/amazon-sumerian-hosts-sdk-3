@@ -17,7 +17,7 @@ import {
   QueueState,
   Blend1dState,
   Blend2dState,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 import AnimationFeature, {AnimationTypes} from './AnimationFeature';
 import SingleState from './state/SingleState';
 

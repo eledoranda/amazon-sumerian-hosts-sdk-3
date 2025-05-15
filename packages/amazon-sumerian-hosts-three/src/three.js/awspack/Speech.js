@@ -1,6 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
-import {Speech as CoreSpeech} from '@amazon-sumerian-hosts/core';
+import {Speech as CoreSpeech} from 'amazon-sumerian-hosts-sdk-3-core';
 
 /**
  * Threejs Audio object

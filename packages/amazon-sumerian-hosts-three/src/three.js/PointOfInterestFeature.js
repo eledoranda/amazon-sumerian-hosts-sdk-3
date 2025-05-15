@@ -3,7 +3,7 @@
 import {
   PointOfInterestFeature as CorePointOfInterestFeature,
   AxisMap,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 
 /**
  * @extends core/PointOfInterestFeature

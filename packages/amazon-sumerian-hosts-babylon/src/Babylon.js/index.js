@@ -14,7 +14,7 @@ import {
   GestureFeature,
   DefaultGestureWords,
   Messenger,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 
 import PointOfInterestFeature, {AxisMap} from './PointOfInterestFeature';
 import {env} from './HostEnvironment';

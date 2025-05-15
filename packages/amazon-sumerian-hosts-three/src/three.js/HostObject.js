@@ -11,7 +11,7 @@
 import {
   HostObject as CoreHostObject,
   Messenger,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 
 /**
  * @extends core/HostObject

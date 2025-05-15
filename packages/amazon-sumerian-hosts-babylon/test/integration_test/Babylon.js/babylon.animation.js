@@ -3,7 +3,7 @@
 /* eslint-disable no-inner-declarations */
 
 import * as BABYLON from '@babylonjs/core/Legacy/legacy';
-import * as HOST from '@amazon-sumerian-hosts/babylon';
+import * as HOST from 'amazon-sumerian-hosts-sdk-3-babylon';
 
 async function main() {
   const {scene, shadowGenerator} = createScene();

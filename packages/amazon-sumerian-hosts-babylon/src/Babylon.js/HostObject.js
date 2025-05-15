@@ -4,7 +4,7 @@ import {
   HostObject as CoreHostObject,
   LipsyncFeature,
   GestureFeature,
-} from '@amazon-sumerian-hosts/core';
+} from 'amazon-sumerian-hosts-sdk-3-core';
 import {SceneLoader} from '@babylonjs/core/Loading/sceneLoader';
 import {PrecisionDate} from '@babylonjs/core/Misc/precisionDate';
 import {Observable} from '@babylonjs/core/Misc/observable';

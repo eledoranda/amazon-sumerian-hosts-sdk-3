@@ -1,4 +1,4 @@
-import {HostObject} from '@amazon-sumerian-hosts/babylon';
+import {HostObject} from 'amazon-sumerian-hosts-sdk-3-babylon';
 import {Scene} from '@babylonjs/core/scene';
 import {Vector3} from '@babylonjs/core';
 import {fromCognitoIdentityPool} from '@aws-sdk/credential-providers';

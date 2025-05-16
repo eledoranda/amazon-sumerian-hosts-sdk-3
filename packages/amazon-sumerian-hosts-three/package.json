@@ -1,6 +1,6 @@
 {
   "name": "amazon-sumerian-hosts-sdk-3-three",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Three.js implementation for Amazon Sumerian Hosts SDK 3",
   "license": "MIT",
   "author": {
@@ -19,7 +19,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "amazon-sumerian-hosts-sdk-3-core": "^3.0.0"
+    "amazon-sumerian-hosts-sdk-3-core": "^1.0.0"
   },
   "peerDependencies": {
     "three": "=0.127.0"

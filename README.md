@@ -1,6 +1,15 @@
 > ⚠️ **DISCLAIMER** ⚠️
 >
 > This is a modified version of [Amazon Sumerian Hosts](https://github.com/aws-samples/amazon-sumerian-hosts) adapted to use AWS SDK v3 for Amazon Polly. This adaptation is done to support a personal project and should be used accordingly.
+>
+> To install the SDK v3 versions, use:
+> ```
+> npm i amazon-sumerian-hosts-sdk-3-babylon
+> npm i amazon-sumerian-hosts-sdk-3-core
+> npm i amazon-sumerian-hosts-sdk-3-three
+> ```
+>
+> Everything that follows is the README from the original repository.
 
 # Amazon Sumerian Hosts
 
@@ -81,4 +90,3 @@ This repository contains 3D character and animation assets (glTF format) tailore
 ## Integrating with other 3D engines
 
 The `@amazon-sumerian-hosts/core` package provides the core host functionality that can be integrated into any engine. You will need to extend any host modules/classes that need to use resources or capabilities unique to your rendering engine. See the [@amazon-sumerian-hosts/three](packages/amazon-sumerian-hosts-three) and [@amazon-sumerian-hosts/babylon](packages/amazon-sumerian-hosts-babylon) package folders for examples of files you'll likely need to include. Generally you will need to extend `Messenger` if your engine has an event/messaging system, `HostObject` if your engine keeps track of time and delta time, `AnimationFeature` and `SingleState` if your engine has an animation system, and `TextToSpeechFeature` and `Speech` if your engine has an audio system.
-

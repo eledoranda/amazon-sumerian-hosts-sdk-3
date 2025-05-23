@@ -1,6 +1,6 @@
 {
   "name": "amazon-sumerian-hosts-sdk-3-babylon",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Babylon.js implementation for Amazon Sumerian Hosts SDK 3",
   "license": "MIT",
   "author": {

@@ -627,6 +627,7 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
       this._synthesizeSpeechmarks(speechmarkParams),
       this._synthesizeAudio(audioParams),
     ]).then(results => {
+      console.log('Before _createSpeech', ...results);
       return this._createSpeech(text, ...results);
     });
     this._speechCache[text] = speech;
@@ -708,93 +709,63 @@ class AbstractTextToSpeechFeature extends AbstractHostFeature {
     });
 
     return this.constructor.SERVICES.polly.send(command).then(result => {
-      // Convert AudioStream to string
-      let dataStr = '';
-      if (result.AudioStream instanceof Uint8Array) {
-        const decoder = new TextDecoder('utf-8');
-        dataStr = decoder.decode(result.AudioStream);
-      } else if (typeof result.AudioStream === 'string') {
-        dataStr = result.AudioStream;
-      } else if (result.AudioStream && result.AudioStream.toString) {
-        dataStr = result.AudioStream.toString('utf-8');
-      } else {
-        throw new Error('Unexpected AudioStream format');
-      }
+      console.log('Before _synthesizeSpeechmarks', result);
 
-      const markTypes = {
-        sentence: [],
-        word: [],
-        viseme: [],
-        ssml: [],
-      };
-      const endMarkTypes = {
-        sentence: null,
-        word: null,
-        viseme: null,
-        ssml: null,
-      };
+      // Return transformToString() promise
+      return result.AudioStream.transformToString().then(dataStr => {
+        const markTypes = {
+          sentence: [],
+          word: [],
+          viseme: [],
+          ssml: [],
+        };
+        const endMarkTypes = {
+          sentence: null,
+          word: null,
+          viseme: null,
+          ssml: null,
+        };
 
-      // Split by enclosing {} to create speechmark objects
-      const speechMarks = [...dataStr.matchAll(/\{.*?\}(?=\n|$)/gm)].map(
-        match => {
-          const mark = JSON.parse(match[0]);
+        // Split by enclosing {} to create speechmark objects
+        const speechMarks = [...dataStr.matchAll(/\{.*?\}(?=\n|$)/gm)].map(
+          match => {
+            const mark = JSON.parse(match[0]);
 
-          // Set the duration of the last speechmark stored matching this one's type
-          const numMarks = markTypes[mark.type].length;
-          if (numMarks > 0) {
-            const lastMark = markTypes[mark.type][numMarks - 1];
-            lastMark.duration = mark.time - lastMark.time;
+            // Set the duration of the last speechmark stored matching this one's type
+            const numMarks = markTypes[mark.type].length;
+            if (numMarks > 0) {
+              const lastMark = markTypes[mark.type][numMarks - 1];
+              lastMark.duration = mark.time - lastMark.time;
+            }
+
+            markTypes[mark.type].push(mark);
+            endMarkTypes[mark.type] = mark;
+            return mark;
           }
-
-          markTypes[mark.type].push(mark);
-          endMarkTypes[mark.type] = mark;
-          return mark;
-        }
-      );
-
-      // Find the time of the latest speechmark
-      const endTimes = [];
-      if (endMarkTypes.sentence) {
-        endTimes.push(endMarkTypes.sentence.time);
-      }
-      if (endMarkTypes.word) {
-        endTimes.push(endMarkTypes.word.time);
-      }
-      if (endMarkTypes.viseme) {
-        endTimes.push(endMarkTypes.viseme.time);
-      }
-      if (endMarkTypes.ssml) {
-        endTimes.push(endMarkTypes.ssml.time);
-      }
-      const endTime = Math.max(...endTimes);
-
-      // Calculate duration for the ending speechMarks of each type
-      if (endMarkTypes.sentence) {
-        endMarkTypes.sentence.duration = Math.max(
-          this._minEndMarkDuration,
-          endTime - endMarkTypes.sentence.time
         );
-      }
-      if (endMarkTypes.word) {
-        endMarkTypes.word.duration = Math.max(
-          this._minEndMarkDuration,
-          endTime - endMarkTypes.word.time
-        );
-      }
-      if (endMarkTypes.viseme) {
-        endMarkTypes.viseme.duration = Math.max(
-          this._minEndMarkDuration,
-          endTime - endMarkTypes.viseme.time
-        );
-      }
-      if (endMarkTypes.ssml) {
-        endMarkTypes.ssml.duration = Math.max(
-          this._minEndMarkDuration,
-          endTime - endMarkTypes.ssml.time
-        );
-      }
 
-      return speechMarks;
+        // Find the time of the latest speechmark
+        const endTimes = [];
+        if (endMarkTypes.sentence) endTimes.push(endMarkTypes.sentence.time);
+        if (endMarkTypes.word) endTimes.push(endMarkTypes.word.time);
+        if (endMarkTypes.viseme) endTimes.push(endMarkTypes.viseme.time);
+        if (endMarkTypes.ssml) endTimes.push(endMarkTypes.ssml.time);
+
+        const endTime = Math.max(...endTimes);
+
+        // Calculate duration for the ending speechMarks of each type
+        ['sentence', 'word', 'viseme', 'ssml'].forEach(type => {
+          const mark = endMarkTypes[type];
+          if (mark) {
+            mark.duration = Math.max(
+              this._minEndMarkDuration,
+              endTime - mark.time
+            );
+          }
+        });
+
+        return speechMarks;
+      });
     });
   }
 
